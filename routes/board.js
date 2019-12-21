@@ -60,7 +60,6 @@ router.post('/', upload.array('img', 10), async function (req, res, next) {
     let title = req.body.title;
     let description = req.body.description;
     let goalTime = req.body.goalTime;
-    goalTime = new Date();
     let fileLength = req.files.length;
     let imgList = ""
     for (let i = 0; i < fileLength; i++) {
@@ -85,9 +84,44 @@ router.post('/', upload.array('img', 10), async function (req, res, next) {
         console.log(err);
         res.status(500).json(result);
       }
-      result.status = true;
-      result.message = idx;
-      res.status(200).json(result);
+      // 글의 목표 시간을 파싱
+      let goalTimeSpl = goalTime.split(":");
+      let goalSec = (+goalTimeSpl[0]) * 60 * 60 + (+goalTimeSpl[1]) * 60 + (+goalTimeSpl[2]);
+      console.log("goalSec :", goalSec);
+
+      db.query('SELECT together_time FROM user ', (err, rt, fields) => {
+        // 나의 함께한 시간 파싱
+        let togetTime = rt[0].together_time;
+        let togetTImeSpl = togetTime.split(":");
+        let togetSec = (+togetTImeSpl[0]) * 60 * 60 + (+togetTImeSpl[1]) * 60 + (+togetTImeSpl[2]);
+        console.log("togetSec :", togetSec);
+
+        console.log(togetTImeSpl);
+
+        let totalSec = goalSec + togetSec;
+        console.log("totalSec :", totalSec);
+
+
+        let totalDate = new Date(totalSec * 1000).toISOString().substr(11, 8);
+
+        console.log(totalDate);
+
+
+        db.query('UPDATE user SET together_time = ? where email = ?', [totalDate, req.user], (err, rt, fields) => {
+
+          if (err) {
+            result.status = false;
+            result.message = err;
+            console.log(err);
+            res.status(500).json(result);
+          }
+
+          result.status = true;
+          result.message = idx;
+          res.status(200).json(result);
+
+        });
+      });
     });
 
   } catch (err) {

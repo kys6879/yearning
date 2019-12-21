@@ -18,7 +18,11 @@ router.get('/', async function (req, res, next) {
     db.query('SELECT * FROM user', (err, rt, fields) => {
       result.status = true;
       result.message = rt;
-      res.status(200).json(rt);
+
+      let data = {
+        "data": rt[0]
+      }
+      res.status(200).json(data);
     })
 
   } catch (err) {
@@ -88,6 +92,37 @@ router.put('/upload/profile', profileUpload.single('img'), async function (req, 
         res.status(500).json(err);
       }
       res.status(200).json(req.file);
+    })
+  } catch (err) {
+    result.status = false;
+    result.message = err;
+    console.log(err);
+    res.status(500).json(result);
+  }
+});
+
+// 목표시간 설정하기
+router.put('/goaltime', async function (req, res, next) {
+  let result = {
+    status: "",
+    message: ""
+  };
+  try {
+
+    let goalTime = req.body.goalTime
+    console.log(goalTime);
+    let userEmail = req.user;
+    db.query("UPDATE user SET  goal_time = ? WHERE email = ?", [goalTime, userEmail], (err, rt, fields) => {
+      if (err) {
+        result.status = false;
+        result.message = err;
+        console.log(err);
+        res.status(500).json(result);
+      }
+
+      result.status = true;
+      result.message = "success";
+      res.status(200).json(result);
     })
   } catch (err) {
     result.status = false;
